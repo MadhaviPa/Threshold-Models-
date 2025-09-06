@@ -1,0 +1,204 @@
+---
+title: "Final TM"
+author: "Madhavi Panchangum"
+date: "2025-01-12"
+output: pdf_document
+---
+
+```{r setup}
+simulate_tar_process <- function(n, threshold = 1, phi1 = 0.6, phi2 = 0.4, sigma = 1) {
+  # Initialize time series
+  x <- numeric(n)
+  noise <- rnorm(n, mean = 0, sd = sigma) # Generate Gaussian noise
+  
+  # Generate the TAR process
+  for (t in 2:n) {
+    if (x[t-1] <= threshold) {
+      x[t] <- phi1 * x[t-1] + noise[t]
+    } else {
+      x[t] <- phi2 * x[t-1] + noise[t]
+    }
+  }
+  return(x)
+}
+
+simulate_linear_ar <- function(n, phi = 0.5, sigma = 1) {
+  # Initialize time series
+  x <- numeric(n)
+  noise <- rnorm(n, mean = 0, sd = sigma) # Generate Gaussian noise
+  
+  # Generate the Linear AR process
+  for (t in 2:n) {
+    x[t] <- phi * x[t-1] + noise[t]
+  }
+  return(x)
+}
+
+# Set parameters
+n <- 1000           # Number of time points
+threshold <- 1       # Threshold value
+phi1 <- 0.6          # Coefficient for regime 1
+phi2 <- 0.4          # Coefficient for regime 2
+phi <- 0.5           # Coefficient for Linear AR process
+sigma <- 1           # Standard deviation of noise
+
+# Simulate the TAR and Linear AR processes
+set.seed(123)        # For reproducibility
+tar_series <- simulate_tar_process(n, threshold, phi1, phi2, sigma)
+linear_ar_series <- simulate_linear_ar(n, phi, sigma)
+
+
+# Check and print basic statistics
+mean_tar <- mean(tar_series)
+var_tar <- var(tar_series)
+mean_linear_ar <- mean(linear_ar_series)
+var_linear_ar <- var(linear_ar_series)
+
+cat("TAR Process - Mean of X(t):", mean_tar, "Variance of X(t):", var_tar, "\n")
+cat("Linear AR Process - Mean of X(t):", mean_linear_ar, "Variance of X(t):", var_linear_ar, "\n")
+# Plot the histogram of the TAR process
+hist(tar_series, breaks = 30, col = "lightblue", border = "black",
+     main = "Histogram with Linear AR and Threshold AR Curves",
+     xlab = "X(t)", ylab = "Frequency", probability = TRUE) # Set probability = TRUE for density
+
+# Density for TAR process
+tar_density <- density(tar_series)
+
+# Density for Linear AR process
+linear_ar_density <- density(linear_ar_series)
+
+
+# Add density curves to the histogram
+lines(tar_density, col = "blue", lwd = 2, lty = 1)             # TAR Process
+lines(linear_ar_density, col = "red", lwd = 2, lty = 1)        # Linear AR Process
+
+# Add legend
+legend("topright", legend = c("TAR Process", "Linear AR Process"),
+       col = c("blue", "red"), lwd = 2, lty = c(1, 1))
+```
+
+```{r}
+# Load required libraries
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+# TAR simulation function
+simulate_tar <- function(initial_value, n, params, threshold) {
+  x <- numeric(n)
+  x[1] <- initial_value
+  for (t in 2:n) {
+    if (x[t-1] < threshold) {
+      x[t] <- params[1] + params[2] * x[t-1] + rnorm(1, 0, 1)
+    } else {
+      x[t] <- params[3] + params[4] * x[t-1] + rnorm(1, 0, 1)
+    }
+  }
+  return(x)
+}
+
+# Parameters
+n <- 500
+threshold <- 0
+params <- c(0.5, 0.8, -0.3, 0.5)  # TAR parameters
+initial_values <- c(-5, 0, 5)
+
+# Simulate trajectories
+trajectories <- lapply(initial_values, simulate_tar, n = n, params = params, threshold = threshold)
+
+# Compute time averages
+time_avg <- sapply(trajectories, function(traj) cumsum(traj) / seq_along(traj))
+time_avg_df <- data.frame(Time = 1:n, Avg1 = time_avg[, 1], Avg2 = time_avg[, 2], Avg3 = time_avg[, 3])
+
+# Generate time-average plot
+time_avg_plot <- ggplot(data = time_avg_df, aes(x = Time)) +
+  geom_line(aes(y = Avg1), color = "blue", alpha = 0.7) +
+  geom_line(aes(y = Avg2), color = "red", alpha = 0.7) +
+  geom_line(aes(y = Avg3), color = "green", alpha = 0.7) +
+  labs(
+    title = "Time-Averaged State Distributions",
+    x = "Time",
+    y = "Average Value"
+  ) +
+  theme_minimal()
+
+# Print the plot
+print(time_avg_plot)
+
+
+```
+
+
+```{r}
+
+# Load necessary libraries
+
+
+if (!require("tseries")) install.packages("tseries")
+if (!require("lmtest")) install.packages("lmtest")
+if (!require("car")) install.packages("car")
+library(tseries)
+library(lmtest)
+library(car)
+
+# Load and transform the data
+data("AirPassengers")
+real_data <- log(AirPassengers)  # Log-transformed data
+
+# ADF Test for Stationarity
+adf_result <- adf.test(real_data)
+cat("ADF Test Statistic:", adf_result$statistic, "\n")
+cat("ADF p-value:", adf_result$p.value, "\n")
+
+# Fit AR(1) model
+linear_model <- arima(real_data, order = c(1, 0, 0))
+
+
+# RESET Test for Linearity
+reset_test <- resettest(linear_model$residuals ~ time(real_data), power = 2:3, type = "fitted")
+cat("RESET Test Statistic:", reset_test$statistic, "\n")
+cat("RESET p-value:", reset_test$p.value, "\n")
+
+# Ljung-Box Test for Residual Autocorrelation
+box_test <- Box.test(linear_model$residuals, lag = 10, type = "Ljung-Box")
+cat("Ljung-Box Test Statistic:", box_test$statistic, "\n")
+cat("Ljung-Box p-value:", box_test$p.value, "\n")
+
+```
+
+```{r}
+# Install and load required libraries
+if (!require("quantmod")) install.packages("quantmod")
+if (!require("rugarch")) install.packages("rugarch")
+if (!require("tseries")) install.packages("tseries")
+if (!require("lmtest")) install.packages("lmtest")
+library(quantmod)
+library(rugarch)
+library(tseries)
+library(lmtest)
+
+# Step 1: Fetch Real-World Data (Tesla stock prices)
+getSymbols("TSLA", from = "2020-01-01", to = "2023-12-31", auto.assign = TRUE)
+tsla_data <- na.omit(Cl(TSLA))  # Use closing prices
+returns <- diff(log(tsla_data))[-1]  # Calculate log returns
+plot(returns, main = "Log Returns of TSLA", ylab = "Returns", xlab = "Time")
+
+# Step 2: TGARCH Model Specification and Fitting
+tgarch_spec <- ugarchspec(
+  variance.model = list(model = "fGARCH", garchOrder = c(1, 1), submodel = "TGARCH"),
+  mean.model = list(armaOrder = c(0, 0)),  # No ARMA terms for simplicity
+  distribution.model = "std"  # Student's t-distribution for returns
+)
+tgarch_fit <- ugarchfit(spec = tgarch_spec, data = returns)
+
+
+
+
+# Step 3: Visualization
+par(mfrow = c(2, 1))  # Set layout for two plots
+plot(tgarch_fit, which = 3)  # Conditional variance
+plot(tgarch_fit, which = 9)  # Standardized residuals
+
+
+```
+
+
