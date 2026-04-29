@@ -39,7 +39,7 @@ models that partition the state space into distinct regimes governed by a thresh
 Three empirical analyses are included:
 
 1. **TAR vs. Linear AR Simulation** — comparison of distributional properties and ergodicity
-   across 1,000 simulated time points
+   across 10,000 simulated time points
 2. **AirPassengers Dataset** — stationarity (ADF test) and linearity checks
    (RESET + Ljung-Box tests) on log-transformed monthly airline passenger data
 3. **Tesla Log Returns (TGARCH)** — volatility modeling of Tesla stock returns with
@@ -57,4 +57,27 @@ Three empirical analyses are included:
 
 ---
 
-## Repository Structure
+
+
+## Requirements
+
+Analysis is conducted in **R**. Key packages used:
+
+- `tseries` — ADF test
+- `lmtest` — RESET test
+- `rugarch` or `fGarch` — TGARCH modeling
+- `ggplot2` — visualizations
+
+---
+
+## References
+
+Key works cited include Tong (1977, 1980, 1983, 1990), Tsay (1989), Hansen (1997),
+Zakoian, and Granger & Teräsvirta (1993). Full reference list is available in the paper.
+
+---
+
+## License
+
+This work is submitted as part of an academic course and is intended for educational
+purposes only.
